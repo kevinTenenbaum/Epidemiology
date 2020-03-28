@@ -1,14 +1,19 @@
 getSummaryStats <- function(people){
   c(Susceptible = sum(people$Status == 'S'),
     Infected = sum(people$Status == 'I'),
-    Removed = sum(people$Status == 'R'))
-  
+    Recovered = sum(people$Status == 'R'),
+    Dead = sum(people$Status == 'D'), 
+    Hospitalized = sum(people$Hospital),
+    NumBeds = HospitalBaseline)
 }
 
 getCityStats <- function(people){
   cs <- people[,.(Susceptible = sum(Status == 'S'),
                   Infected = sum(Status == 'I'),
-                  Removed = sum(Status == 'R')), .(City)]
+                  Recovered = sum(Status == 'R'),
+                  Dead = sum(Status == 'D'),
+                  Hospitalized = sum(Hospital),
+                  NumBeds = HospitalBaseline), .(City)]
   setorder(cs, City)
   return(cs)
 }
@@ -53,12 +58,36 @@ simDay <- function(people, verbose = FALSE){
   people[,NDays := NDays + 1] # Increase number of days in current status
   people[,Status := NewStatus] # Finalize status changes
   
+  # Resolve Cases for Mortality
+  NEligible <- nrow(people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE])
+  if(sum(people$Hospital) >= HospitalBaseline){
+    people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE, Status := ifelse(runif(NEligible) < MortalityBaseline, 'D', Status)]  
+  } else{
+    people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE, Status := ifelse(runif(NEligible) < MortalityFullHospitals, 'D', Status)]  
+  }
+
+  # Remove people from hospital
+  people[Hospital == TRUE & NDays >= HospitalStayDays, Hospital := FALSE]
+  
+  # Resolve cases to hospital
+  NEligible <- nrow(people[Status == 'I' & NDays >= HospitalMinDays & Hospital == 0])
+  samps <- runif(NEligible) <= HospitalizationRate
+  remainingBeds <- HospitalBaseline - sum(samps) - sum(people$Hospital)
+  if(remainingBeds <= 0){ # ration beds by ID number
+    cumulative <- cumsum(samps) # find cumulative number of beds taken on latest iteration
+    cumulative <- which(cumulative <= remainingBeds) # find which are okay
+    samps[-cumulative] <- FALSE # set all beds after full to FALSE
+  } 
+  
+  people[Status == 'I' & NDays >= HospitalMinDays & Hospital == FALSE, Hospital := samps]  # fill hospital beds
+  
+  
   # Move Everyone to new locations
   # people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
   people[, atStore := runif(N) <= CommCenterRate]
   people[, c("StartingLocationX", "StartingLocationY") := list(pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationX, sd = MoveSD))), pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationY, sd = MoveSD))))]
   
-  people <- people[, c("ID", "i.City", "Status", "StartingLocationX", "StartingLocationY", "NDays", "atStore")]
+  people <- people[, c("ID", "i.City", "Status", "StartingLocationX", "StartingLocationY", "NDays", "atStore", "Hospital")]
   setnames(people, "i.City", "City")
   if(NCities > 1){
     # Simulate who should move cities
@@ -115,6 +144,7 @@ initializePop <- function(){
                    StartingLocationY = runif(N, min = -SideLength/2, max = SideLength/2),
                    atStore = runif(N) <= CommCenterRate, 
                    NDays = 0,
+                   Hospital  = FALSE,
                    City = sample(1:NCities, size = N, replace = TRUE)
   )
   people <- data.table(people)
@@ -133,11 +163,14 @@ simDays <- function(NumDays){
   DayStats <- data.frame(Day = 1:NumDays, 
                          Susceptible = rep(0, NumDays),
                          Infected = rep(0, NumDays),
-                         Removed = rep(0, NumDays),
+                         Recovered = rep(0, NumDays),
+                         Dead = rep(0, NumDays),
+                         Hospitalized = 0,
+                         NumBeds = HospitalBaseline,
                          R = 0)
   CityStats <- bind_rows(lapply(1:NCities, function(x) DayStats)) %>% arrange(Day)
   CityStats$City <- 1:NCities
-  CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Removed', 'R')]
+  CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Recovered','Dead', 'Hospitalized','NumBeds', 'R')]
   
   
   newSim <- list(people = people, summary = getSummaryStats(people), cities = getCityStats(people))
