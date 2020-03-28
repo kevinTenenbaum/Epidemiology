@@ -19,11 +19,11 @@ InfectionRadius <- 2
 InfectionRate <- .2
 InfectionDays <- 7
 InfectionDaySD <- 1
-N <- 10000
+N <- 15000
 SideLength <- 50
-MoveSD = 3
+MoveSD = 4
 NumDays <- 100 
-NCities <- 1
+NCities <- 3
 CityMoveRate <- 0.1
 DayStats <- data.frame(Day = 1:NumDays, 
                        Susceptible = rep(0, NumDays),
@@ -68,17 +68,20 @@ CityStats[CityStats$Day == 1, -1] <- newSim$cities
 pb <- txtProgressBar(min = 2, max = NumDays, style = 3)
 for(i in 2:NumDays){
   setTxtProgressBar(pb, i)
-  newSim <- simDay(newSim$people)
+  newSim <- simDay(newSim$people, verbose = TRUE)
   DayStats[i, -1] <- newSim$summary
   CityStats[CityStats$Day == i, -1] <- newSim$cities
 }
 
+
+# 
 ggplot() + geom_line(data = CityStats, aes(x = Day, y = Infected), color = 'red') + 
   geom_line(data = CityStats, aes(x = Day, y = Susceptible), color  = 'black') + 
   geom_line(data = CityStats, aes(x = Day, y = Removed), color = 'green') + facet_wrap(~City)
 
 
-simDay <- function(people){
+
+simDay <- function(people, verbose = FALSE){
   
   ## Check to see who should be infected
   infected <- people[Status == 'I']
@@ -99,12 +102,13 @@ simDay <- function(people){
   merged[, inRadius := Distance <= InfectionRadius & City == i.City]
   
   # Aggregate to only people that were in radius
-  aggMerged <- merged[,.(NumContacts = sum(inRadius)), .(ID)]
+  aggMerged <- merged[,.(NumContacts = sum(inRadius)), .(ID, City)]
   toInfect <- aggMerged[NumContacts > 0]
   
   # Randomly sample exposed people to be infected
   toInfect[, Infected := sample(c(0,1), size = nrow(toInfect), replace = TRUE, prob = c(1-InfectionRate, InfectionRate))]
   setkey(toInfect, ID)
+  
   ## Change Status 
   people <- toInfect[people] # Join infection data
   people[,NewStatus := Status] # Set new status as the same as current status
@@ -119,8 +123,9 @@ simDay <- function(people){
     
   # Move Everyone to new locations
   people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
-  people <- people[, c("ID", "City", "Status", "StartingLocationX", "StartingLocationY", "NDays")]
-  if(NCities > 1){
+  people <- people[, c("ID", "i.City", "Status", "StartingLocationX", "StartingLocationY", "NDays")]
+  setnames(people, "i.City", "City")
+    if(NCities > 1){
     # Simulate who should move cities
     people[, MoveCity := runif(nrow(people)) <= CityMoveRate]
     # Move people to new cities
@@ -129,9 +134,37 @@ simDay <- function(people){
     people[MoveCity == TRUE, NewCity := ifelse(CityIndex < City, CityIndex, CityIndex + 1)]
     people[,City := NewCity]
   }
+  
+  if(nrow(toInfect) > 0){
+    # Calculate Effective Reproduction Numbers globally and by city
+    Rglobal <- sum(toInfect$Infected, na.rm = TRUE)/nrow(infected)
+    
+    InitCity <- infected[,.(numInfected = sum(Status == 'I')), .(City)]
+    setkey(InitCity, City)
+    InfectCity <- toInfect[,.(numtoInfect = sum(Infected)),.(City)]
+    setkey(InfectCity, City)
+    RCity <- InfectCity[InitCity]
+    RCity[,R := (numtoInfect/numInfected)]
+    RCity <- RCity[,c("City","R")]
+    
+    
+    
+  } else {
+    Rglobal <- 0
+    RCity <- data.table(City = 1:NCities,
+                        R = 0)
+    setkey(RCity, City)
+  }
+  
   # Calculate summary stats
   sumStats <- getSummaryStats(people)
+  sumStats <- c(sumStats, R = Rglobal)
   cityStats <- getCityStats(people)
+  cityStats <- merge(cityStats, RCity, by = 'City') 
+  
+  if(verbose){
+    cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' R: ', sumStats['Removed'], ' Reff: ', sumStats['R'])
+  }
   
   return(list(people = people, summary = sumStats, cities = cityStats))
 }
