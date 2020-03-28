@@ -5,11 +5,12 @@ library(dtplyr)
 library(ggplot2)
 library(ggforce)
 
-#' TODO: Calculate R at each time stamp
 #' TODO: Add the ability to have people congregate at one local place
 #' TODO: Add congregation at multiple places in each city
 #' TODO: Add a social distancing component
 #' TODO: Make cities vary in size
+#' TODO: Model number of hospital beds as a function of the number infected
+#' TODO: Model mortality rates as a function of the number of hospital beds and the number infected
 #' TODO: Allow user to input real cities and populations and coordinates with cross-contamination related to distance
 
 
@@ -72,7 +73,6 @@ for(i in 2:NumDays){
   DayStats[i, -1] <- newSim$summary
   CityStats[CityStats$Day == i, -1] <- newSim$cities
 }
-
 
 # 
 ggplot() + geom_line(data = CityStats, aes(x = Day, y = Infected), color = 'red') + 
@@ -160,7 +160,8 @@ simDay <- function(people, verbose = FALSE){
   sumStats <- getSummaryStats(people)
   sumStats <- c(sumStats, R = Rglobal)
   cityStats <- getCityStats(people)
-  cityStats <- merge(cityStats, RCity, by = 'City') 
+  cityStats <- merge(cityStats, RCity, by = 'City', all.x = TRUE) 
+  cityStats[is.na(R), R := 0]
   
   if(verbose){
     cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' R: ', sumStats['Removed'], ' Reff: ', sumStats['R'])
