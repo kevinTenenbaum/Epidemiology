@@ -8,8 +8,9 @@ library(tidyr)
 
 source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 
-#' TODO: Add congregation at multiple places in each city
 #' TODO: Make hospitalization baselines relative to city population
+#'  Change code for hospitalization and mortality to have different individual mortality based on if they were denied hospitalization
+#'  Use cumulative sum to take people out from hospital even if they need to be there.
 #' TODO: Add a social distancing component
 #' TODO: Make cities vary in size
 #' TODO: Model severity of the disease to allocate hospital beds
@@ -34,7 +35,7 @@ NumDays <- 40
 NCities <- 3
 CityPopShareShape1 <- 2
 CityPopShareShape2 <- 60
-# CommunityCenters <- 1
+# CommunityCente  rs <- 1
 CommCenterRate <- 0
 CityMoveRate <- 0
 HospitalBaseline <- N/5
@@ -43,7 +44,6 @@ MortalityFullHospitals <- .3 # Mortality rate when there are no empty beds
 HospitalizationRate <- .1 # Rate that cases need hospital beds
 HospitalMinDays <- 3
 MortalityMinDays <- 5
-HospitalStayDays <- 8
 
 
 # Simulate Disease Spread
@@ -59,11 +59,13 @@ DayPivot <- DayStats %>% pivot_longer(cols = Susceptible:Hospitalized, names_to 
 ### Plot Results
 
 # Plot Population Shares by City
-ggplot(CityPivot, aes(x = Day, y = Count, colour = Status)) + geom_line() + 
-  facet_wrap(~City) + theme_bw()
+ggplot(CityPivot, aes(x = Day, y = Count, colour = Status)) + geom_line() + facet_wrap(~City) +  
+  geom_line(data = CityStats, aes(x = Day, y = NumBeds),colour = 'black', lty = 2) + 
+  theme_bw() 
 
 # Plot Global Population Share
-ggplot(DayPivot, aes(x = Day, y = Count, colour = Status)) + geom_line() + theme_bw()
+ggplot(DayPivot, aes(x = Day, y = Count, colour = Status)) + geom_line() + theme_bw() + 
+  geom_line(data = DayStats, aes(x = Day, y = NumBeds), colour = 'black', lty = 2)
 
 # Plot global Reff over time
 ggplot(DayStats, aes(x = Day, y = R)) + geom_line() + theme_bw()
