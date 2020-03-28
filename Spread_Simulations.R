@@ -25,6 +25,8 @@ SideLength <- 50
 MoveSD = 4
 NumDays <- 100 
 NCities <- 3
+CommunityCenters <- 1
+CommCenterRate <- 1/7
 CityMoveRate <- 0.1
 DayStats <- data.frame(Day = 1:NumDays, 
                        Susceptible = rep(0, NumDays),
@@ -34,7 +36,7 @@ CityStats <- bind_rows(lapply(1:NCities, function(x) DayStats)) %>% arrange(Day)
 CityStats$City <- 1:NCities
 CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Removed')]
 
-
+StoreLocation <- c(X = SideLength + InfectionRadius + 1, Y = SideLength + InfectionRadius + 1)
 
 people <- tibble(ID = 1:N,
        InitialInfected = base::sample(c(0,1), size = N, replace = TRUE, prob = c(1-BaselineRate, BaselineRate)),
@@ -122,7 +124,9 @@ simDay <- function(people, verbose = FALSE){
   people[,Status := NewStatus] # Finalize status changes
     
   # Move Everyone to new locations
-  people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
+  # people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
+  people[, c("StartingLocationX", "StartingLocationY") := list(pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationX, sd = MoveSD))), pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationY, sd = MoveSD))))]
+  
   people <- people[, c("ID", "i.City", "Status", "StartingLocationX", "StartingLocationY", "NDays")]
   setnames(people, "i.City", "City")
     if(NCities > 1){
