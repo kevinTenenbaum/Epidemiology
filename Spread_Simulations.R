@@ -4,6 +4,7 @@ library(rvest)
 library(dtplyr)
 library(ggplot2)
 library(ggforce)
+library(tidyr)
 
 source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 
@@ -25,21 +26,35 @@ InfectionDaySD <- 1
 N <- 15000
 SideLength <- 50
 MoveSD = 4
-NumDays <- 100 
+NumDays <- 40 
 NCities <- 3
 CommunityCenters <- 1
 CommCenterRate <- 0
 CityMoveRate <- 0.1
 
 
-simDays(5)
+simulates <- simDays(NumDays)
 
+CityStats <- simulates$CityStats
+CityPivot <- CityStats %>% pivot_longer(cols = Susceptible:Removed, names_to = "Status", values_to = "Count")
 
-# 
-ggplot() + geom_line(data = CityStats, aes(x = Day, y = Infected), color = 'red') + 
-  geom_line(data = CityStats, aes(x = Day, y = Susceptible), color  = 'black') + 
-  geom_line(data = CityStats, aes(x = Day, y = Removed), color = 'green') + facet_wrap(~City)
+DayStats <- simulates$DayStats
+DayPivot <- DayStats %>% pivot_longer(cols = Susceptible:Removed, names_to = "Status", values_to = "Count")
 
+### Plot Results
 
+# Plot Population Shares by City
+ggplot(CityPivot, aes(x = Day, y = Count, colour = Status)) + geom_line() + 
+  facet_wrap(~City)
+
+# Plot Global Population Share
+ggplot(DayPivot, aes(x = Day, y = Count, colour = Status)) + geom_line()
+
+# Plot global Reff over time
+ggplot(DayStats, aes(x = Day, y = R)) + geom_line()
+
+# Plot Reff by City over time
+ggplot(CityStats %>% mutate(City = as.factor(City)), aes(x = Day, y = R, colour = City)) + geom_line()
+s
 
 

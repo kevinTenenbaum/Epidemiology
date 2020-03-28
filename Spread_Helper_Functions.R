@@ -99,7 +99,7 @@ simDay <- function(people, verbose = FALSE){
   cityStats[is.na(R), R := 0]
   
   if(verbose){
-    cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' R: ', sumStats['Removed'], ' Reff: ', sumStats['R'])
+    cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' R: ', sumStats['Removed'], ' Reff: ', round(sumStats['R'], 2))
   }
   
   return(list(people = people, summary = sumStats, cities = cityStats))
@@ -133,15 +133,16 @@ simDays <- function(NumDays){
   DayStats <- data.frame(Day = 1:NumDays, 
                          Susceptible = rep(0, NumDays),
                          Infected = rep(0, NumDays),
-                         Removed = rep(0, NumDays))
+                         Removed = rep(0, NumDays),
+                         R = 0)
   CityStats <- bind_rows(lapply(1:NCities, function(x) DayStats)) %>% arrange(Day)
   CityStats$City <- 1:NCities
-  CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Removed')]
+  CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Removed', 'R')]
   
   
   newSim <- list(people = people, summary = getSummaryStats(people), cities = getCityStats(people))
-  DayStats[1, -1] <- newSim$summary
-  CityStats[CityStats$Day == 1, -1] <- newSim$cities
+  DayStats[1, -1] <- c(newSim$summary, R = NA)
+  CityStats[CityStats$Day == 1, -1] <- cbind(newSim$cities, R = NA)
   
   pb <- txtProgressBar(min = 2, max = NumDays, style = 3)
   for(i in 2:NumDays){
