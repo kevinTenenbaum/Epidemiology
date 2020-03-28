@@ -16,7 +16,7 @@ N <- 10000
 SideLength <- 50
 MoveSD = 3
 NumDays <- 100 
-NCities <- 4
+NCities <- 1
 CityMoveRate <- 0.1
 DayStats <- data.frame(Day = 1:NumDays, 
                        Susceptible = rep(0, NumDays),
@@ -113,11 +113,15 @@ simDay <- function(people){
   # Move Everyone to new locations
   people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
   people <- people[, c("ID", "City", "Status", "StartingLocationX", "StartingLocationY", "NDays")]
-  people[, MoveCity := runif(nrow(people)) <= CityMoveRate]
-  people[, CityIndex := sample(1:(NCities-1), size = nrow(people), replace = TRUE)]
-  people[,NewCity := City]
-  people[MoveCity == TRUE, NewCity := ifelse(CityIndex < City, CityIndex, CityIndex + 1)]
-  people[,City := NewCity]
+  if(NCities > 1){
+    # Simulate who should move cities
+    people[, MoveCity := runif(nrow(people)) <= CityMoveRate]
+    # Move people to new cities
+    people[, CityIndex := sample(1:(NCities-1), size = nrow(people), replace = TRUE)]
+    people[,NewCity := City]
+    people[MoveCity == TRUE, NewCity := ifelse(CityIndex < City, CityIndex, CityIndex + 1)]
+    people[,City := NewCity]
+  }
   # Calculate summary stats
   sumStats <- getSummaryStats(people)
   cityStats <- getCityStats(people)
