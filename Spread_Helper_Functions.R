@@ -145,7 +145,7 @@ initializePop <- function(){
                    atStore = runif(N) <= CommCenterRate, 
                    NDays = 0,
                    Hospital  = FALSE,
-                   City = sample(1:NCities, size = N, replace = TRUE)
+                   City = sample(1:NCities, size = N, replace = TRUE, prob = N*prop.table(rbeta(NCities, shape1 = CityPopShareShape1, shape2 = CityPopShareShape2)))
   )
   people <- data.table(people)
   setkey(people, ID)
