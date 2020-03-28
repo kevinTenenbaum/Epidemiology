@@ -5,6 +5,13 @@ library(dtplyr)
 library(ggplot2)
 library(ggforce)
 
+#' TODO: Calculate R at each time stamp
+#' TODO: Add the ability to have people congregate at one local place
+#' TODO: Add congregation at multiple places in each city
+#' TODO: Add a social distancing component
+#' TODO: Make cities vary in size
+#' TODO: Allow user to input real cities and populations and coordinates with cross-contamination related to distance
+
 
 ## Set paramters
 BaselineRate <-  0.005
