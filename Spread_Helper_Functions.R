@@ -102,12 +102,12 @@ simDay <- function(people
   people[Hospital == TRUE & NDays > InfectionDayLimit, Hospital := FALSE]
   people[Severe == TRUE & NDays > InfectionDayLimit, Severe := FALSE]
   people[Status != 'I', Hospital := FALSE]
-  
+  people[Status != 'I', Severe := FALSE]
   
   ### Resolve cases to hospital
   # Sample severe cases
-  NEligible <- people[Status == 'I' & Severe == FALSE & NDays >= HospitalMinDays & Severe == FALSE] %>% nrow()
-  people[Status == 'I' & Severe == FALSE & NDays >= HospitalMinDays & Severe == FALSE, Severe := runif(NEligible) <= HospitalizationRate]
+  NEligible <- people[Status == 'I' & Severe == FALSE & NDays >= HospitalMinDays] %>% nrow()
+  people[Status == 'I' & Severe == FALSE & NDays >= HospitalMinDays, Severe := runif(NEligible) <= HospitalizationRate]
   ## Find number of severe cases and beds by City
   
   # Find number of beds in each city
@@ -125,7 +125,7 @@ simDay <- function(people
   people <- cumSevere[people]
   
   # Move people to Hospital if they are severe and NSevere < # of Beds
-  people[Severe == TRUE & numBeds - NSevere > 0, Hospital := TRUE]
+  people[Status == 'I' & Severe == TRUE & numBeds - NSevere > 0, Hospital := TRUE]
   
   
   # Move Everyone to new locations
@@ -235,7 +235,7 @@ simDays <- function( BaselineRate =  0.005
                      ,MortalityMinDays = 5, verbose = FALSE, shiny = FALSE){
   
   
-  people <- initializePop(N = N, BaselineRate = BaselineRate, SideLength = SideLength, CommCenterRate = CommCenterRate, InfectionDays = InfectionDays, 
+  initPeople <- initializePop(N = N, BaselineRate = BaselineRate, SideLength = SideLength, CommCenterRate = CommCenterRate, InfectionDays = InfectionDays, 
                           InfectionDaySD = InfectionDaySD, NCities = NCities,
                           CityPopShareShape1 = CityPopShareShape1, CityPopShareShape2 = CityPopShareShape2, HospitalBaseline = HospitalBaseline)
   
@@ -253,7 +253,7 @@ simDays <- function( BaselineRate =  0.005
   CityStats <- CityStats[, c('Day','City','Susceptible','Infected','Recovered','Dead', 'Severe','NumBeds', 'R')]
   
   
-  newSim <- list(people = people, summary = getSummaryStats(people), cities = getCityStats(people))
+  newSim <- list(people = initPeople, summary = getSummaryStats(initPeople), cities = getCityStats(initPeople))
   DayStats[1, -1] <- c(newSim$summary, R = NA)
   CityStats[CityStats$Day == 1, -1] <- cbind(newSim$cities, R = NA)
   
@@ -268,7 +268,7 @@ simDays <- function( BaselineRate =  0.005
       setTxtProgressBar(pb, i)
     }
     
-    newSim <- simDay(people
+    newSim <- simDay(newSim$people
                      ,InfectionRadius = InfectionRadius
                      ,InfectionRate = InfectionRate
                      ,N = N
@@ -289,6 +289,6 @@ simDays <- function( BaselineRate =  0.005
     CityStats[CityStats$Day == i, -1] <- newSim$cities
   }
   
-  return(list(people = people, DayStats = DayStats, CityStats = CityStats))
+  return(list(people = newSim$people, DayStats = DayStats, CityStats = CityStats))
 }
 

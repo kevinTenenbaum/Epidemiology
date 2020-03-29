@@ -1,6 +1,6 @@
 
 
-source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
+source('Spread_Helper_Functions.R') # Source helper functions
 
 #' TODO: Allow user to input real cities and populations and coordinates with cross-contamination related to distance
 #' TODO: Publish simulation tool as a shiny app on ShinyApps.io
@@ -17,11 +17,11 @@ source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 # N <- 15000
 # SideLength <- 100
 # MoveSD = 4
-# NumDays <- 40 
+# NumDays <- 40
 # NCities <- 3
 # CityPopShareShape1 <- 2
 # CityPopShareShape2 <- 60
-# # CommunityCente  rs <- 1
+# CommunityCenters <- 1
 # CommCenterRate <- 0
 # CityMoveRate <- 0
 # HospitalBaseline <- N/5
@@ -33,7 +33,7 @@ source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 
 
 # Simulate Disease Spread
-simulates <- simDays()
+simulates <- simDays(NumDays = 50, N = 10000, BaselineRate = 0.05, verbose = T)
 
 # Pivot metrics for easier plotting
 CityStats <- simulates$CityStats

@@ -1,0 +1,12 @@
+name: Epidemiology
+title: Epidemiology
+username:
+account: kevintenenbaum
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2017194
+bundleId: 2941042
+url: https://kevintenenbaum.shinyapps.io/Epidemiology/
+when: 1585517877.37544
+asMultiple: FALSE
+asStatic: FALSE
