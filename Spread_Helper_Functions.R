@@ -27,7 +27,23 @@ getCityStats <- function(people){
   return(cs)
 }
 
-simDay <- function(people, verbose = FALSE){
+simDay <- function(people
+                   ,InfectionRadius = 1
+                   ,InfectionRate = .2
+                   ,N = 15000
+                   ,SideLength = 100
+                   ,MoveSD = 4
+                   ,NCities = 3
+                   ,CommunityCenters = FALSE
+                   ,CommCenterRate = 0
+                   ,CityMoveRate = 0
+                   ,HospitalBaseline = N/5
+                   ,MortalityBaseline = .15 # Mortality rate for cases warranting hospitalization
+                   ,MortalityFullHospitals = .3 # Mortality rate when there are no empty beds
+                   ,HospitalizationRate = .1 # Rate that cases need hospital beds
+                   ,HospitalMinDays = 3
+                   ,MortalityMinDays = 5
+                   , verbose = FALSE){
   
   ## Check to see who should be infected
   infected <- people[Status == 'I']
@@ -65,20 +81,23 @@ simDay <- function(people, verbose = FALSE){
   people[,NDays := NDays + 1] # Increase number of days in current status
   people[,Status := NewStatus] # Finalize status changes
   
-  # Resolve Cases for Mortality
+  # Resolve Cases for Mortality in hospitals
   NEligible <- nrow(people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays])
-  people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := runif(NEligible) <= MortalityBaseline]
-  
-  NEligible <- nrow(people[Status == 'I' & Severe == TRUE & Hospital == FALSE & NDays >= MortalityMinDays])
-  people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := runif(NEligible) <= MortalityFullHospitals]
-  
-  
-  if(sum(people$Hospital) >= HospitalBaseline){
-    people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE, Status := ifelse(runif(NEligible) < MortalityBaseline, 'D', Status)]  
-  } else{
-    people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE, Status := ifelse(runif(NEligible) < MortalityFullHospitals, 'D', Status)]  
+  if(NEligible > 0){
+    people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := ifelse(runif(NEligible) <= MortalityBaseline, 'D', Status)]  
   }
-
+  
+  
+  # Resolve cases for mortality when not in hostital but should be
+  NEligible <- nrow(people[Status == 'I' & Severe == TRUE & Hospital == FALSE & NDays >= MortalityMinDays])
+  if(NEligible > 0){
+    people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := ifelse(runif(NEligible) <= MortalityFullHospitals, 'D', Status)]  
+  }
+  
+  
+  
+  
+  
   # Remove people from hospital
   people[Hospital == TRUE & NDays > InfectionDayLimit, Hospital := FALSE]
   people[Severe == TRUE & NDays > InfectionDayLimit, Severe := FALSE]
@@ -111,7 +130,12 @@ simDay <- function(people, verbose = FALSE){
   
   # Move Everyone to new locations
   # people[, c("StartingLocationX", "StartingLocationY") := list(rnorm(N, mean = StartingLocationX, sd = MoveSD), rnorm(N, mean = StartingLocationY, sd = MoveSD))]
-  people[, atStore := runif(N) <= CommCenterRate]
+  if(CommunityCenters){
+    people[, atStore := runif(N) <= CommCenterRate]  
+  } else{
+    people[,atStore := FALSE]
+  }
+  
   people[, c("StartingLocationX", "StartingLocationY") := list(pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationX, sd = MoveSD))), pmax(-SideLength/2, pmin(SideLength/2, rnorm(N, mean = StartingLocationY, sd = MoveSD))))]
   
   people <- people[, c("ID", "i.City", "Status", "StartingLocationX", "StartingLocationY", "NDays", "atStore", "Severe", "numBeds", "Hospital", "InfectionDayLimit")]
@@ -161,9 +185,9 @@ simDay <- function(people, verbose = FALSE){
   return(list(people = people, summary = sumStats, cities = cityStats))
 }
 
-
 # Create Initial Population
-initializePop <- function(){
+initializePop <- function(N = 15000, BaselineRate = 0.005, SideLength = 50, CommCenterRate = 0, InfectionDays = 7, InfectionDaySD = 1.5, NCities = 1,
+                          CityPopShareShape1 = 2, CityPopShareShape2 = 50, HospitalBaseline = N/5){
   people <- tibble(ID = 1:N,
                    InitialInfected = base::sample(c(0,1), size = N, replace = TRUE, prob = c(1-BaselineRate, BaselineRate)),
                    Status = ifelse(InitialInfected == 1, 'I', 'S'),
@@ -188,8 +212,32 @@ initializePop <- function(){
 
 
 ## Simulate days
-simDays <- function(NumDays){
-  people <- initializePop()
+simDays <- function( BaselineRate =  0.005
+                     ,InfectionRadius = 1
+                     ,InfectionRate = .2
+                     ,InfectionDays = 7
+                     ,InfectionDaySD = 1
+                     ,N = 13000
+                     ,SideLength = 100
+                     ,MoveSD = 4
+                     ,NumDays = 10
+                     ,NCities = 3
+                     ,CityPopShareShape1 = 2
+                     ,CityPopShareShape2 = 60
+                     ,CommunityCenters = FALSE
+                     ,CommCenterRate = 0
+                     ,CityMoveRate = 0
+                     ,HospitalBaseline = N/5
+                     ,MortalityBaseline = .15 # Mortality rate for cases warranting hospitalization
+                     ,MortalityFullHospitals = .3 # Mortality rate when there are no empty beds
+                     ,HospitalizationRate = .1 # Rate that cases need hospital beds
+                     ,HospitalMinDays = 3
+                     ,MortalityMinDays = 5, verbose = FALSE, shiny = FALSE){
+  
+  
+  people <- initializePop(N = N, BaselineRate = BaselineRate, SideLength = SideLength, CommCenterRate = CommCenterRate, InfectionDays = InfectionDays, 
+                          InfectionDaySD = InfectionDaySD, NCities = NCities,
+                          CityPopShareShape1 = CityPopShareShape1, CityPopShareShape2 = CityPopShareShape2, HospitalBaseline = HospitalBaseline)
   
   # Build data frames to track spread
   DayStats <- data.frame(Day = 1:NumDays, 
@@ -209,10 +257,34 @@ simDays <- function(NumDays){
   DayStats[1, -1] <- c(newSim$summary, R = NA)
   CityStats[CityStats$Day == 1, -1] <- cbind(newSim$cities, R = NA)
   
-  pb <- txtProgressBar(min = 2, max = NumDays, style = 3)
+  
+  if(!shiny){
+    pb <- txtProgressBar(min = 2, max = NumDays, style = 3)
+  }
   for(i in 2:NumDays){
-    setTxtProgressBar(pb, i)
-    newSim <- simDay(newSim$people, verbose = TRUE)
+    if(shiny){
+        incProgress(i, detail = paste("Simulating Day", i, " of ", NumDays))
+    } else {
+      setTxtProgressBar(pb, i)
+    }
+    
+    newSim <- simDay(people
+                     ,InfectionRadius = InfectionRadius
+                     ,InfectionRate = InfectionRate
+                     ,N = N
+                     ,SideLength = SideLength
+                     ,MoveSD = MoveSD
+                     ,NCities = NCities
+                     ,CommunityCenters = CommunityCenters
+                     ,CommCenterRate = CommCenterRate
+                     ,CityMoveRate = CityMoveRate
+                     ,HospitalBaseline = HospitalBaseline
+                     ,MortalityBaseline = MortalityBaseline # Mortality rate for cases warranting hospitalization
+                     ,MortalityFullHospitals = MortalityFullHospitals # Mortality rate when there are no empty beds
+                     ,HospitalizationRate = HospitalizationRate # Rate that cases need hospital beds
+                     ,HospitalMinDays = HospitalMinDays
+                     ,MortalityMinDays = MortalityMinDays
+                     , verbose = verbose)
     DayStats[i, -1] <- newSim$summary
     CityStats[CityStats$Day == i, -1] <- newSim$cities
   }
