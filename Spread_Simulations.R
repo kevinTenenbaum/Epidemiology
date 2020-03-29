@@ -1,10 +1,4 @@
-library(data.table)
-library(dplyr, warn.conflicts = FALSE)
-library(rvest)
-library(dtplyr)
-library(ggplot2)
-library(ggforce)
-library(tidyr)
+
 
 source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 
@@ -12,6 +6,7 @@ source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 #' TODO: Publish simulation tool as a shiny app on ShinyApps.io
 #' TODO: Add a readME.md file 
 #' TODO: Create default parameter setting for different scenarios
+#' TODO: Allow for only a portion of people to socially distance
 
 ## Set paramters
 BaselineRate <-  0.005

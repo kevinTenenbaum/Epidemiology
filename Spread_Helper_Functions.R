@@ -1,3 +1,10 @@
+require(data.table)
+require(dplyr, warn.conflicts = FALSE)
+require(dtplyr)
+require(ggplot2)
+require(ggforce)
+require(tidyr)
+
 getSummaryStats <- function(people){
   
   c(Susceptible = sum(people$Status == 'S'),
