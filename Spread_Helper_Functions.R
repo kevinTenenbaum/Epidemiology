@@ -59,7 +59,13 @@ simDay <- function(people, verbose = FALSE){
   people[,Status := NewStatus] # Finalize status changes
   
   # Resolve Cases for Mortality
-  NEligible <- nrow(people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE])
+  NEligible <- nrow(people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays])
+  people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := runif(NEligible) <= MortalityBaseline]
+  
+  NEligible <- nrow(people[Status == 'I' & Severe == TRUE & Hospital == FALSE & NDays >= MortalityMinDays])
+  people[Status == 'I' & Severe == TRUE & Hospital == TRUE & NDays >= MortalityMinDays, Status := runif(NEligible) <= MortalityFullHospitals]
+  
+  
   if(sum(people$Hospital) >= HospitalBaseline){
     people[Status == 'I' & NDays >= MortalityMinDays & Hospital == TRUE, Status := ifelse(runif(NEligible) < MortalityBaseline, 'D', Status)]  
   } else{
@@ -68,7 +74,7 @@ simDay <- function(people, verbose = FALSE){
 
   # Remove people from hospital
   people[Hospital == TRUE & NDays > InfectionDayLimit, Hospital := FALSE]
-  people[Hospital == TRUE & NDays > InfectionDayLimit, Severe := FALSE]
+  people[Severe == TRUE & NDays > InfectionDayLimit, Severe := FALSE]
   people[Status != 'I', Hospital := FALSE]
   
   

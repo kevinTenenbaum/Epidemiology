@@ -51,10 +51,10 @@ simulates <- simDays(NumDays)
 
 # Pivot metrics for easier plotting
 CityStats <- simulates$CityStats
-CityPivot <- CityStats %>% pivot_longer(cols = Susceptible:Hospitalized, names_to = "Status", values_to = "Count")
+CityPivot <- CityStats %>% pivot_longer(cols = Susceptible:Severe, names_to = "Status", values_to = "Count")
 
 DayStats <- simulates$DayStats
-DayPivot <- DayStats %>% pivot_longer(cols = Susceptible:Hospitalized, names_to = "Status", values_to = "Count")
+DayPivot <- DayStats %>% pivot_longer(cols = Susceptible:Severe, names_to = "Status", values_to = "Count")
 
 ### Plot Results
 
