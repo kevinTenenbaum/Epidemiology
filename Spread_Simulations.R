@@ -8,18 +8,9 @@ library(tidyr)
 
 source('~/R/Epidemiology/Spread_Helper_Functions.R') # Source helper functions
 
-#' TODO: Make hospitalization baselines relative to city population
-#'  Change code for hospitalization and mortality to have different individual mortality based on if they were denied hospitalization
-#'  Use cumulative sum to take people out from hospital even if they need to be there.
-#' TODO: Add a social distancing component
-#' TODO: Make cities vary in size
-#' TODO: Model severity of the disease to allocate hospital beds
-#' TODO: Model number of hospital beds as a function of the number infected
-#' TODO: Model mortality rates as a function of the number of hospital beds and the number infected
 #' TODO: Allow user to input real cities and populations and coordinates with cross-contamination related to distance
 #' TODO: Publish simulation tool as a shiny app on ShinyApps.io
 #' TODO: Add a readME.md file 
-#' TODO: Make the cities different from each other
 #' TODO: Create default parameter setting for different scenarios
 
 ## Set paramters

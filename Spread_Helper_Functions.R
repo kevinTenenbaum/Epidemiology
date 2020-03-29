@@ -148,7 +148,7 @@ simDay <- function(people, verbose = FALSE){
   cityStats[is.na(R), R := 0]
   
   if(verbose){
-    cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' R: ', sumStats['Removed'], ' Reff: ', round(sumStats['R'], 2))
+    cat('S: ', sumStats['Susceptible'], ' I: ', sumStats['Infected'], ' V: ', sumStats['Severe'], ' R: ', sumStats['Recovered'], ' Reff: ', round(sumStats['R'], 2))
   }
   
   return(list(people = people, summary = sumStats, cities = cityStats))
