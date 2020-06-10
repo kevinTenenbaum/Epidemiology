@@ -27,4 +27,10 @@ In an effort to better understand the spread of diseases like COVID-19, I built 
 * **MortalityMinDays**: The minimum number of days that must have passed before someone can be severe enough to die from disease.
 
 
+Using the shiny app, we can generate plots like these that show how many people the disease can impact. The horizontal dotted line is the number of hospital beds in the system.
 
+![alt text here](README_files/Screenshot 2020-06-10 at 5.28.00 PM.png)
+
+We can also run simulations that include multiple cities:
+
+![alt text here](README_files/Screenshot 2020-06-10 at 5.33.38 PM.png)
