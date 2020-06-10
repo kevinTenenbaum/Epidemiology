@@ -5,8 +5,8 @@ account: kevintenenbaum
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2017194
-bundleId: 2941042
+bundleId: 2941341
 url: https://kevintenenbaum.shinyapps.io/Epidemiology/
-when: 1585517877.37544
+when: 1585523339.67383
 asMultiple: FALSE
 asStatic: FALSE

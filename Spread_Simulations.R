@@ -3,10 +3,11 @@
 source('Spread_Helper_Functions.R') # Source helper functions
 
 #' TODO: Allow user to input real cities and populations and coordinates with cross-contamination related to distance
-#' TODO: Publish simulation tool as a shiny app on ShinyApps.io
 #' TODO: Add a readME.md file 
 #' TODO: Create default parameter setting for different scenarios
 #' TODO: Allow for only a portion of people to socially distance
+#' TODO: Add summary stats to shiny app in table form
+#' TODO: Allow for other visuals in shiny app
 
 ## Set paramters
 # BaselineRate <-  0.005
